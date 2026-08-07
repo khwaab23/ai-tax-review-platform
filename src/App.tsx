@@ -1,0 +1,2 @@
+import {Navigate,Route,Routes} from 'react-router-dom'; import {AppShell} from './components/AppShell'; import {Dashboard} from './pages/Dashboard'; import {Review} from './pages/Review'; import {ClientPortal} from './pages/ClientPortal';
+export default function App(){return <Routes><Route element={<AppShell/>}><Route path="/cpa" element={<Dashboard/>}/><Route path="/cpa/review" element={<Review/>}/><Route path="/client" element={<ClientPortal/>}/></Route><Route path="*" element={<Navigate to="/cpa" replace/>}/></Routes>}
