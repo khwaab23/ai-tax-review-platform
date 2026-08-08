@@ -1,2 +1,156 @@
-import {ArrowRight,CheckCircle2,ChevronRight,Clock3,FileWarning,MessageSquare,Users} from 'lucide-react'; import {Link} from 'react-router-dom'; import {useAppState} from '../hooks/useAppState'; import {StatusBadge} from '../components/StatusBadge';
-export function Dashboard(){const {state}=useAppState();const unresolved=state.fields.filter(f=>!['verified','rejected'].includes(f.state));const pending=state.requests.filter(r=>r.status==='pending').length;return <main className="dashboard page"><div className="page-heading"><div><p className="eyebrow">Returns / Sarah Johnson</p><h1>2025 Individual Federal Tax Return</h1><p>Preparer: Maya Patel <span>·</span> Reviewer: Daniel Brooks</p></div><Link className="button primary" to="/cpa/review">Continue review <ArrowRight size={17}/></Link></div><section className="return-overview"><div className="overview-main"><div className="section-label">RETURN PROGRESS <strong>68%</strong></div><div className="progress"><span style={{width:'68%'}}/></div><div className="stages"><span className="done">Documents</span><span className="done">Preparation</span><span className="active">Review</span><span>Ready to sign</span><span>Filed</span></div></div><div className="stage-summary"><small>CURRENT STAGE</small><strong>CPA review</strong><span><Clock3 size={14}/> Updated 18 min ago</span></div></section><section className="metric-grid"><article><span className="metric-icon amber"><FileWarning/></span><div><strong>{unresolved.length}</strong><span>Items require review</span></div></article><article><span className="metric-icon blue"><MessageSquare/></span><div><strong>{pending}</strong><span>Waiting on client</span></div></article><article><span className="metric-icon green"><CheckCircle2/></span><div><strong>{state.fields.filter(f=>f.state==='verified').length}</strong><span>Reviews completed</span></div></article><article><span className="metric-icon slate"><Users/></span><div><strong>2</strong><span>Assigned professionals</span></div></article></section><div className="dashboard-grid"><section className="surface review-list"><div className="section-header"><div><h2>Review queue</h2><p>Prioritized items requiring professional attention</p></div><Link to="/cpa/review">Open workspace <ChevronRight size={16}/></Link></div>{unresolved.slice(0,4).map(f=><Link to={`/cpa/review?field=${f.id}`} className="queue-row" key={f.id}><span className={`severity-dot ${f.state}`}/><div><strong>{f.name}</strong><span>{f.form} · {f.line}</span></div><b>{f.value}</b><StatusBadge state={f.state}/><ChevronRight size={17}/></Link>)}</section><aside className="surface activity"><div className="section-header"><div><h2>Recent activity</h2><p>Latest return updates</p></div></div>{state.fields.flatMap(f=>f.audit.map(a=>({...a,field:f.name}))).slice(-4).reverse().map(a=><div className="activity-row" key={a.id}><span className="activity-check"><CheckCircle2 size={15}/></span><div><strong>{a.action}</strong><p>{a.field}</p><small>{a.person} · {a.timestamp}</small></div></div>)}</aside></div></main>}
+import {
+  ArrowRight,
+  CheckCircle2,
+  ChevronRight,
+  Clock3,
+  FileWarning,
+  MessageSquare,
+  Users,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import { useAppState } from "../hooks/useAppState";
+import { StatusBadge } from "../components/StatusBadge";
+export function Dashboard() {
+  const { state } = useAppState();
+  const unresolved = state.fields.filter(
+    (f) => !["verified", "rejected"].includes(f.state),
+  );
+  const pending = state.requests.filter((r) => r.status === "pending").length;
+  return (
+    <main className="dashboard page">
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">Returns / Sarah Johnson</p>
+          <h1>2025 Individual Federal Tax Return</h1>
+          <p>
+            Preparer: Maya Patel <span>·</span> Reviewer: Daniel Brooks
+          </p>
+        </div>
+        <Link className="button primary" to="/cpa/review">
+          Continue review <ArrowRight size={17} />
+        </Link>
+      </div>
+      <section className="return-overview">
+        <div className="overview-main">
+          <div className="section-label">
+            RETURN PROGRESS <strong>68%</strong>
+          </div>
+          <div className="progress">
+            <span style={{ width: "68%" }} />
+          </div>
+          <div className="stages">
+            <span className="done">Documents</span>
+            <span className="done">Preparation</span>
+            <span className="active">Review</span>
+            <span>Ready to sign</span>
+            <span>Filed</span>
+          </div>
+        </div>
+        <div className="stage-summary">
+          <small>CURRENT STAGE</small>
+          <strong>CPA review</strong>
+          <span>
+            <Clock3 size={14} /> Updated 18 min ago
+          </span>
+        </div>
+      </section>
+      <section className="metric-grid">
+        <article>
+          <span className="metric-icon amber">
+            <FileWarning />
+          </span>
+          <div>
+            <strong>{unresolved.length}</strong>
+            <span>Items require review</span>
+          </div>
+        </article>
+        <article>
+          <span className="metric-icon blue">
+            <MessageSquare />
+          </span>
+          <div>
+            <strong>{pending}</strong>
+            <span>Waiting on client</span>
+          </div>
+        </article>
+        <article>
+          <span className="metric-icon green">
+            <CheckCircle2 />
+          </span>
+          <div>
+            <strong>
+              {state.fields.filter((f) => f.state === "verified").length}
+            </strong>
+            <span>Reviews completed</span>
+          </div>
+        </article>
+        <article>
+          <span className="metric-icon slate">
+            <Users />
+          </span>
+          <div>
+            <strong>2</strong>
+            <span>Assigned professionals</span>
+          </div>
+        </article>
+      </section>
+      <div className="dashboard-grid">
+        <section className="surface review-list">
+          <div className="section-header">
+            <div>
+              <h2>Review queue</h2>
+              <p>Prioritized items requiring professional attention</p>
+            </div>
+            <Link to="/cpa/review">
+              Open workspace <ChevronRight size={16} />
+            </Link>
+          </div>
+          {unresolved.slice(0, 4).map((f) => (
+            <Link
+              to={`/cpa/review?field=${f.id}`}
+              className="queue-row"
+              key={f.id}
+            >
+              <span className={`severity-dot ${f.state}`} />
+              <div>
+                <strong>{f.name}</strong>
+                <span>
+                  {f.form} · {f.line}
+                </span>
+              </div>
+              <b>{f.value}</b>
+              <StatusBadge state={f.state} />
+              <ChevronRight size={17} />
+            </Link>
+          ))}
+        </section>
+        <aside className="surface activity">
+          <div className="section-header">
+            <div>
+              <h2>Recent activity</h2>
+              <p>Latest return updates</p>
+            </div>
+          </div>
+          {state.fields
+            .flatMap((f) => f.audit.map((a) => ({ ...a, field: f.name })))
+            .slice(-4)
+            .reverse()
+            .map((a) => (
+              <div className="activity-row" key={a.id}>
+                <span className="activity-check">
+                  <CheckCircle2 size={15} />
+                </span>
+                <div>
+                  <strong>{a.action}</strong>
+                  <p>{a.field}</p>
+                  <small>
+                    {a.person} · {a.timestamp}
+                  </small>
+                </div>
+              </div>
+            ))}
+        </aside>
+      </div>
+    </main>
+  );
+}
