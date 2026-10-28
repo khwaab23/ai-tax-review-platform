@@ -1,16 +1,369 @@
-import {AlertCircle,ArrowRight,Check,CheckCircle2,FileText,HelpCircle,LockKeyhole,MessageCircle,UploadCloud,X} from 'lucide-react';
-import {useRef,useState,type ChangeEvent,type DragEvent} from 'react';
-import {useAppState} from '../hooks/useAppState';import type {ClientRequest} from '../types';
-export function ClientPortal(){const {state}=useAppState();const pending=state.requests.filter(r=>r.status==='pending'),submitted=state.requests.filter(r=>r.status==='submitted');const [active,setActive]=useState<ClientRequest|null>(null);
-return <main className="client-page"><header className="client-welcome"><div><p>Good afternoon, Sarah</p><h1>Your 2025 Federal Tax Return</h1></div><button className="contact-button" onClick={()=>alert('Message started with Maya Patel. In production, this would open secure messaging.')}><MessageCircle/> Message Maya</button></header>
-<section className="client-progress surface"><div><span>YOUR RETURN PROGRESS</span><strong>In review</strong></div><div className="client-track">{['Documents','Preparation','Review','Ready to Sign','Filed'].map((s,i)=><div className={i<2?'complete':i===2?'current':''} key={s}><i>{i<2?<Check/>:i+1}</i><span>{s}</span></div>)}</div><p><LockKeyhole/> Your tax professional is checking your return before it moves to signing.</p></section>
-<section className="next-steps"><div className="client-section-title"><div><h2>Your next steps</h2><p>{pending.length?`${pending.length} item${pending.length===1?'':'s'} need your attention`:'You’re all caught up.'}</p></div>{pending.length>0&&<span>{pending.length} TO DO</span>}</div>{pending.length===0?<div className="all-done surface"><CheckCircle2/><div><h3>Nothing needed from you</h3><p>We’ll let you know if Maya needs anything else.</p></div></div>:<div className="task-list">{pending.map(r=><article className="client-task surface" key={r.id}><span className={`task-icon ${r.type}`}>{r.type==='upload'?<UploadCloud/>:<AlertCircle/>}</span><div><small>REQUESTED BY {r.requestedBy.toUpperCase()}</small><h3>{r.title}</h3><p>{r.what}</p><span className="due">Due {r.due}</span></div><button className="button primary" onClick={()=>setActive(r)}>{r.type==='upload'?'Upload document':'Review amounts'} <ArrowRight/></button></article>)}</div>}</section>
-{submitted.length>0&&<section className="submitted"><div className="client-section-title"><div><h2>Submitted items</h2><p>Received by your Northstar team</p></div></div>{submitted.map(r=><div className="submitted-row surface" key={r.id}><CheckCircle2/><div><strong>{r.title}</strong><span>{r.filename??r.response}</span></div><small>Submitted</small></div>)}</section>}
-<footer className="client-footer"><HelpCircle/><span>Questions about a request? <button onClick={()=>alert('Message started with Maya Patel.')}>Contact Maya Patel</button></span></footer>{active&&<TaskModal request={active} close={()=>setActive(null)}/>}</main>}
-function TaskModal({request,close}:{request:ClientRequest;close:()=>void}){const {submitRequest}=useAppState();const [choice,setChoice]=useState('');const [file,setFile]=useState<File|null>(null);const [error,setError]=useState('');const [progress,setProgress]=useState(0);const [done,setDone]=useState(false);const input=useRef<HTMLInputElement>(null);
-const validate=(f?:File)=>{if(!f)return;if(!['application/pdf','image/jpeg','image/png'].includes(f.type)){setError('Please choose a PDF, JPG, or PNG file.');setFile(null);return}if(f.size>10*1024*1024){setError('This file is over the 10 MB limit.');setFile(null);return}setError('');setFile(f)};
-const upload=()=>{if(!file)return;setProgress(12);const timer=setInterval(()=>setProgress(p=>{if(p>=88){clearInterval(timer);setTimeout(()=>{submitRequest(request.id,'Document uploaded',file.name);setDone(true)},350);return 100}return p+19}),180)};const submitChoice=()=>{submitRequest(request.id,choice==='question'?'Client asked Maya a question':choice);setDone(true)};
-if(done)return <div className="modal-backdrop"><div className="client-modal success-modal"><CheckCircle2/><h2>Thank you — we received it</h2><p>Maya will review your response and update your return. We’ll contact you if anything else is needed.</p><button className="button primary wide" onClick={close}>Back to your return</button></div></div>;
-return <div className="modal-backdrop"><div className="client-modal" role="dialog" aria-modal="true" aria-labelledby="task-title"><button className="modal-close" onClick={close} aria-label="Close"><X/></button><small>REQUEST FROM {request.requestedBy.toUpperCase()}</small><h2 id="task-title">{request.title}</h2><div className="request-context"><div><strong>Why we need this</strong><p>{request.why}</p></div><div><strong>What happens next</strong><p>{request.after}</p></div></div>
-{request.type==='upload'?<><label className={`dropzone ${error?'invalid':''}`} onDragOver={(e:DragEvent)=>e.preventDefault()} onDrop={(e:DragEvent)=>{e.preventDefault();validate(e.dataTransfer.files[0])}}><input ref={input} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e:ChangeEvent<HTMLInputElement>)=>validate(e.target.files?.[0])}/>{file?<><FileText/><strong>{file.name}</strong><span>{(file.size/1024/1024).toFixed(2)} MB · Ready to upload</span><button type="button" className="text-button" onClick={e=>{e.preventDefault();input.current?.click()}}>Replace file</button></>:<><UploadCloud/><strong>Drop your document here</strong><span>or choose a file from your device</span><button type="button" className="button secondary" onClick={e=>{e.preventDefault();input.current?.click()}}>Choose file</button><small>PDF, JPG, or PNG · Up to 10 MB</small></>}</label>{error&&<p className="file-error"><AlertCircle/>{error}</p>}{progress>0&&progress<100&&<div className="upload-progress"><span><b>Uploading securely…</b>{progress}%</span><div><i style={{width:`${progress}%`}}/></div></div>}<div className="upload-tip"><HelpCircle/><p><strong>Make sure the document is readable.</strong><br/>If it’s blurry, cropped, or the wrong tax year, replace it before uploading.</p></div><button className="button primary wide" disabled={!file||progress>0} onClick={upload}>Upload document</button></>:
-<><div className="amount-compare"><div><span>W-2 amount</span><strong>$84,500</strong><small>From Box 1 of your W-2</small></div><div><span>Questionnaire amount</span><strong>$8,450</strong><small>From your tax questionnaire</small></div></div><fieldset className="choice-list"><legend>Which answer is right?</legend>{[['The W-2 amount is correct','$84,500 — W-2 confirmed'],['The questionnaire amount is correct','$8,450 — questionnaire confirmed'],['I am not sure','Client is not sure'],['Ask my preparer a question','question']].map(([label,value])=><label key={value}><input type="radio" name="amount" value={value} checked={choice===value} onChange={e=>setChoice(e.target.value)}/><span>{label}</span></label>)}</fieldset><button className="button primary wide" disabled={!choice} onClick={submitChoice}>{choice==='question'?'Message Maya':'Submit response'}</button></>}</div></div>}
+import {
+  AlertCircle,
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  FileText,
+  HelpCircle,
+  LockKeyhole,
+  MessageCircle,
+  UploadCloud,
+  X,
+} from "lucide-react";
+import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { useAppState } from "../hooks/useAppState";
+import type { ClientRequest } from "../types";
+export function ClientPortal() {
+  const { state } = useAppState();
+  const pending = state.requests.filter((r) => r.status === "pending"),
+    submitted = state.requests.filter((r) => r.status === "submitted");
+  const [active, setActive] = useState<ClientRequest | null>(null);
+  return (
+    <main className="client-page">
+      <header className="client-welcome">
+        <div>
+          <p>Good afternoon, Sarah</p>
+          <h1>Your 2025 Federal Tax Return</h1>
+        </div>
+        <button
+          className="contact-button"
+          onClick={() =>
+            alert(
+              "Message started with Maya Patel. In production, this would open secure messaging.",
+            )
+          }
+        >
+          <MessageCircle /> Message Maya
+        </button>
+      </header>
+      <section className="client-progress surface">
+        <div>
+          <span>YOUR RETURN PROGRESS</span>
+          <strong>In review</strong>
+        </div>
+        <div className="client-track">
+          {["Documents", "Preparation", "Review", "Ready to Sign", "Filed"].map(
+            (s, i) => (
+              <div
+                className={i < 2 ? "complete" : i === 2 ? "current" : ""}
+                key={s}
+              >
+                <i>{i < 2 ? <Check /> : i + 1}</i>
+                <span>{s}</span>
+              </div>
+            ),
+          )}
+        </div>
+        <p>
+          <LockKeyhole /> Your tax professional is checking your return before
+          it moves to signing.
+        </p>
+      </section>
+      <section className="next-steps">
+        <div className="client-section-title">
+          <div>
+            <h2>Your next steps</h2>
+            <p>
+              {pending.length
+                ? `${pending.length} item${pending.length === 1 ? "" : "s"} need your attention`
+                : "You’re all caught up."}
+            </p>
+          </div>
+          {pending.length > 0 && <span>{pending.length} TO DO</span>}
+        </div>
+        {pending.length === 0 ? (
+          <div className="all-done surface">
+            <CheckCircle2 />
+            <div>
+              <h3>Nothing needed from you</h3>
+              <p>We’ll let you know if Maya needs anything else.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="task-list">
+            {pending.map((r) => (
+              <article className="client-task surface" key={r.id}>
+                <span className={`task-icon ${r.type}`}>
+                  {r.type === "upload" ? <UploadCloud /> : <AlertCircle />}
+                </span>
+                <div>
+                  <small>REQUESTED BY {r.requestedBy.toUpperCase()}</small>
+                  <h3>{r.title}</h3>
+                  <p>{r.what}</p>
+                  <span className="due">Due {r.due}</span>
+                </div>
+                <button className="button primary" onClick={() => setActive(r)}>
+                  {r.type === "upload" ? "Upload document" : "Review amounts"}{" "}
+                  <ArrowRight />
+                </button>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+      {submitted.length > 0 && (
+        <section className="submitted">
+          <div className="client-section-title">
+            <div>
+              <h2>Submitted items</h2>
+              <p>Received by your Northstar team</p>
+            </div>
+          </div>
+          {submitted.map((r) => (
+            <div className="submitted-row surface" key={r.id}>
+              <CheckCircle2 />
+              <div>
+                <strong>{r.title}</strong>
+                <span>{r.filename ?? r.response}</span>
+              </div>
+              <small>Submitted</small>
+            </div>
+          ))}
+        </section>
+      )}
+      <footer className="client-footer">
+        <HelpCircle />
+        <span>
+          Questions about a request?{" "}
+          <button onClick={() => alert("Message started with Maya Patel.")}>
+            Contact Maya Patel
+          </button>
+        </span>
+      </footer>
+      {active && <TaskModal request={active} close={() => setActive(null)} />}
+    </main>
+  );
+}
+function TaskModal({
+  request,
+  close,
+}: {
+  request: ClientRequest;
+  close: () => void;
+}) {
+  const { submitRequest } = useAppState();
+  const [choice, setChoice] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [error, setError] = useState("");
+  const [progress, setProgress] = useState(0);
+  const [done, setDone] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+  const validate = (f?: File) => {
+    if (!f) return;
+    if (!["application/pdf", "image/jpeg", "image/png"].includes(f.type)) {
+      setError("Please choose a PDF, JPG, or PNG file.");
+      setFile(null);
+      return;
+    }
+    if (f.size > 10 * 1024 * 1024) {
+      setError("This file is over the 10 MB limit.");
+      setFile(null);
+      return;
+    }
+    setError("");
+    setFile(f);
+  };
+  const upload = () => {
+    if (!file) return;
+    setProgress(12);
+    const timer = setInterval(
+      () =>
+        setProgress((p) => {
+          if (p >= 88) {
+            clearInterval(timer);
+            setTimeout(() => {
+              submitRequest(request.id, "Document uploaded", file.name);
+              setDone(true);
+            }, 350);
+            return 100;
+          }
+          return p + 19;
+        }),
+      180,
+    );
+  };
+  const submitChoice = () => {
+    submitRequest(
+      request.id,
+      choice === "question" ? "Client asked Maya a question" : choice,
+    );
+    setDone(true);
+  };
+  if (done)
+    return (
+      <div className="modal-backdrop">
+        <div className="client-modal success-modal">
+          <CheckCircle2 />
+          <h2>Thank you — we received it</h2>
+          <p>
+            Maya will review your response and update your return. We’ll contact
+            you if anything else is needed.
+          </p>
+          <button className="button primary wide" onClick={close}>
+            Back to your return
+          </button>
+        </div>
+      </div>
+    );
+  return (
+    <div className="modal-backdrop">
+      <div
+        className="client-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="task-title"
+      >
+        <button className="modal-close" onClick={close} aria-label="Close">
+          <X />
+        </button>
+        <small>REQUEST FROM {request.requestedBy.toUpperCase()}</small>
+        <h2 id="task-title">{request.title}</h2>
+        <div className="request-context">
+          <div>
+            <strong>Why we need this</strong>
+            <p>{request.why}</p>
+          </div>
+          <div>
+            <strong>What happens next</strong>
+            <p>{request.after}</p>
+          </div>
+        </div>
+        {request.type === "upload" ? (
+          <>
+            <label
+              className={`dropzone ${error ? "invalid" : ""}`}
+              onDragOver={(e: DragEvent) => e.preventDefault()}
+              onDrop={(e: DragEvent) => {
+                e.preventDefault();
+                validate(e.dataTransfer.files[0]);
+              }}
+            >
+              <input
+                ref={input}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                  validate(e.target.files?.[0])
+                }
+              />
+              {file ? (
+                <>
+                  <FileText />
+                  <strong>{file.name}</strong>
+                  <span>
+                    {(file.size / 1024 / 1024).toFixed(2)} MB · Ready to upload
+                  </span>
+                  <button
+                    type="button"
+                    className="text-button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      input.current?.click();
+                    }}
+                  >
+                    Replace file
+                  </button>
+                </>
+              ) : (
+                <>
+                  <UploadCloud />
+                  <strong>Drop your document here</strong>
+                  <span>or choose a file from your device</span>
+                  <button
+                    type="button"
+                    className="button secondary"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      input.current?.click();
+                    }}
+                  >
+                    Choose file
+                  </button>
+                  <small>PDF, JPG, or PNG · Up to 10 MB</small>
+                </>
+              )}
+            </label>
+            {error && (
+              <p className="file-error">
+                <AlertCircle />
+                {error}
+              </p>
+            )}
+            {progress > 0 && progress < 100 && (
+              <div className="upload-progress">
+                <span>
+                  <b>Uploading securely…</b>
+                  {progress}%
+                </span>
+                <div>
+                  <i style={{ width: `${progress}%` }} />
+                </div>
+              </div>
+            )}
+            <div className="upload-tip">
+              <HelpCircle />
+              <p>
+                <strong>Make sure the document is readable.</strong>
+                <br />
+                If it’s blurry, cropped, or the wrong tax year, replace it
+                before uploading.
+              </p>
+            </div>
+            <button
+              className="button primary wide"
+              disabled={!file || progress > 0}
+              onClick={upload}
+            >
+              Upload document
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="amount-compare">
+              <div>
+                <span>W-2 amount</span>
+                <strong>$84,500</strong>
+                <small>From Box 1 of your W-2</small>
+              </div>
+              <div>
+                <span>Questionnaire amount</span>
+                <strong>$8,450</strong>
+                <small>From your tax questionnaire</small>
+              </div>
+            </div>
+            <fieldset className="choice-list">
+              <legend>Which answer is right?</legend>
+              {[
+                ["The W-2 amount is correct", "$84,500 — W-2 confirmed"],
+                [
+                  "The questionnaire amount is correct",
+                  "$8,450 — questionnaire confirmed",
+                ],
+                ["I am not sure", "Client is not sure"],
+                ["Ask my preparer a question", "question"],
+              ].map(([label, value]) => (
+                <label key={value}>
+                  <input
+                    type="radio"
+                    name="amount"
+                    value={value}
+                    checked={choice === value}
+                    onChange={(e) => setChoice(e.target.value)}
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </fieldset>
+            <button
+              className="button primary wide"
+              disabled={!choice}
+              onClick={submitChoice}
+            >
+              {choice === "question" ? "Message Maya" : "Submit response"}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
